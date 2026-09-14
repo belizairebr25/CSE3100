@@ -21,9 +21,9 @@ int main(){
 	scanf("%d", &n);
 	int ret = happy(n);
 	if(ret == 1){
-		printf("%d is a happy number\n", n);
+		printf("%d is a happy number.\n", n);
 	} else {
-		printf("%d is NOT a happy number\n", n);
+		printf("%d is NOT a happy number.\n", n);
 	}
 	return 0;
 }
