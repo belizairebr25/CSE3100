@@ -1,23 +1,29 @@
 #include <stdio.h>
-#define max_input_length 8
-void parser(int n){
-	//use mathematical parsing formula digit = (x//10^n) % 10 for digit selection
-	int digits[max_input_length] = {};
-	int power = 1;
-	for(int i = 0; i < max_input_length; i++){
-		digits[max_input_length - 1 - i] = (n / power) % 10;
-		power *= 10;
-					
+
+int happy(int n){
+	int sum = 0;
+	if(n == 1 || n == 0){
+		return 1;
+	} else if(n == 4){
+		return 0;
 	}
-	for(int i = 0; i <max_input_length; i++){
-		printf("%d", digits[i]);
+	while (n > 0) {
+		int digit = n % 10;
+		sum += digit * digit;
+		n /= 10;
 	}
-	printf("\n");
+	printf("%d\n", sum);
+	return happy(sum);
 }
 int main(){
 	int n;
 	printf("n = ");
 	scanf("%d", &n);
-	parser(n);
+	int ret = happy(n);
+	if(ret == 1){
+		printf("%d is a happy number\n", n);
+	} else {
+		printf("%d is NOT a happy number\n", n);
+	}
 	return 0;
 }
