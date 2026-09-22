@@ -9,8 +9,8 @@ all: $(TARGETS)
 
 oddSum: oddSum.c
 	$(CC) $(CFLAGS) -o oddSum oddSum.c
-2dWalk: 2d-walk.c
-	$(CC) $(CFLAGS) -o 2dWalk 2d-walk.c
+2d-walk: 2d-walk.c
+	$(CC) $(CFLAGS) -o 2d-walk 2d-walk.c
 clean:
 	rm -rf *.o *~ $(TARGETS) a.out
 
