@@ -3,21 +3,19 @@
 
 int oddSumHelp(int count, int bound, int value)
 {
-	if (count <= 0) {
-		return 0;
+	if(count == 0){
+		return (value == 0);
 	}
-	if (bound <= 0){
-		return 1;
+	for(int i = bound; i >=1; i -=2){
+		if (i > value){
+			continue;
+		}
+		if (oddSumHelp(count - 1, i - 2, value - i) == 1){
+			printf("%d ", i);
+			return 1;
+		}
 	}
-	//fill in your code below
-	if((bound % 2) != 0){
-		value -= bound;
-		printf("%d ", bound);
-		bound -= 2;
-		count--;
-	}
-
-	return(oddSumHelp);
+	return 0;
 }
 
 //Do not change the code below
