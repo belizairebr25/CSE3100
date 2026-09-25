@@ -1,5 +1,7 @@
-#include <stdio.h>
 
+#include <stdlib.h>
+#include <stdio.h> 
+#define ONE 1
 /* This program should print the sum of the elements
  *     1^2, 2^2, 3^2, ..., n^2
  * where n is an integer provided by the user on the
@@ -7,6 +9,7 @@
  * Seek out the memory leaks and plug them up! */
 
 /* Computes the sum of the first n elements in the array. */
+
 int sum(int n, int* arr)
 {
     int i, sum;
@@ -16,10 +19,11 @@ int sum(int n, int* arr)
 
 /* Fills the given array with the values
  * 1^2, 2^2, 3^2, ..., (n-1)^2, n^2. */
+
 void fillSquares(int n, int* arr)
 {
     int i;
-    for(i = 1; i <= n; i++)
+    for(i = ONE; i <= n; i++)
         arr[i] = i*i;
 }
 
@@ -27,6 +31,7 @@ void fillSquares(int n, int* arr)
  * fills array with squares, and computes
  * the sum of the squares. Prints out the
  * sum before freeing all used memory. */
+
 int main(int argc, char* argv[])
 {
     int n, total;
@@ -52,3 +57,4 @@ int main(int argc, char* argv[])
     printf("total: %d\n", total);
     return 0;
 }
+

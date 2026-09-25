@@ -7,8 +7,8 @@ TARGETS=argvcat squares
 all: $(TARGETS)                                                                         
                                                                                         
 #Static Pattern Rules                                                                   
-$(TARGETS): % : %.c                                                                     
-        $(CC) $(CFLAGS) -o $@ $<                                                        
+$(TARGETS): % : %.c                                                                    
+	$(CC) $(CFLAGS) -o $@ $<                                                        
                                                                                         
 clean:                                                                                  
 	rm -rf *.o *~ $(TARGETS)   
