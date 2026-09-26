@@ -11,10 +11,11 @@
 
 int sum(int n, int* arr)
 {
-    int i, sum;
-    for(i = 0; i <= n+1; i++)
+    int sum = 0;
+    for(int i = 0; i <= n; i++){
         sum += arr[i];
-	return sum;
+    }
+    return sum;
 }
 
 /* Fills the given array with the values
@@ -24,7 +25,7 @@ void fillSquares(int n, int* arr)
 {
     int i;
     for(i = 1; i <= n; i++)
-        arr[i] = i*i;
+        arr[i-1] = i*i;
 }
 
 /* Reads an integer n from arguments,
@@ -50,9 +51,9 @@ int main(int argc, char* argv[])
         printf("n must be positive.");
         return 1;
     }
-    arr = (int*) malloc(n+1);
+    arr = (int*) malloc(sizeof(int) * (n+1));
     //stack overflow said to try setting it all to zeroes
-    for(int i = 0; i <= n+1; i++){
+    for(int i = 0; i <= n; i++){
 	arr[i] = 0;
     }
 
