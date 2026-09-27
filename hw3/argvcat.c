@@ -13,16 +13,23 @@ void my_error(char *s)
  * Dynamically allocate space for the result.
  * Return the address of the result.
  */
-char *my_strcat(char *s1, char *s2)
+void my_strcat(int argc, char **argv, char *s)
 {
-    // TODO 
-	    
-    return ("%c%c", s1, s2);
+    // TODO add chars to array
+	int k = 0;
+	for (int i = 0; i < argc; i++){
+		for(int j = 0; j < strlen(argv[i]); j++){
+			s = realloc(s, (k+1));
+			s[k] = argv[i][j];
+			k++;
+		}
+	}
+	s[k] = '\0';
 }
 
 int main(int argc, char *argv[])
 {
-    char    *s;
+   /* char    *s;
 
     s = my_strcat(" ", argv[0]);
 
@@ -31,6 +38,16 @@ int main(int argc, char *argv[])
     }
 
     printf("%s\n", s);
+*/
+	char *s = malloc(1*sizeof(char)); //make a one character array
+	if(s == NULL){
+		return 1;
+	}
+	s[0] = 0;
 
+	my_strcat(argc, argv, s);
+	printf ("%s\n", s);
+	free(s);
     return 0;
+
 }
