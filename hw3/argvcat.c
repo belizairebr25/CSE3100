@@ -16,16 +16,17 @@ void my_error(char *s)
 char *my_strcat(char *s1, char *s2)
 {
     // TODO 
-    return NULL;
+	    
+    return ("%c%c", s1, s2);
 }
 
 int main(int argc, char *argv[])
 {
     char    *s;
 
-    s = my_strcat("", argv[0]);
+    s = my_strcat(" ", argv[0]);
 
-    for (int i = 1; i < argc; i ++) {
+    for (int i = 1; i < argc; i++) {
         s = my_strcat(s, argv[i]);
     }
 
