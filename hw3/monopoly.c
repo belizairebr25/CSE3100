@@ -27,9 +27,16 @@ typedef struct Property
 //is not successful 
 //return 1 if the transaction is successful
 //Otherwise, return 0
-int transaction(TPlayer *p1, TPlayer *p2, int amount)
-{
-
+int transaction(TPlayer *p1, TPlayer *p2, int amount){
+	if (p1->balance >= amount){
+		p1->balance -= amount;
+		p2->balance += amount;
+		return 1;
+	} else {
+		p2->balance += p1->balance;
+		p1->balance = 0;
+		return 0;
+	}
 
 }
 
@@ -44,11 +51,26 @@ int one_round(int m, int n, TPlayer p[], TProperty prop[])
 	{
 		int steps = rand() % 6 + 1 + rand() % 6 + 1;
 		//fill in the code below
+		//check if landing on property
+		if (p[i].loc + steps >= n){
+			p[i].balance += n;
+		}
 
+		//new loc
+		p[i].loc = (p[i].loc + steps) % n;
+		int loc = p[i].loc;
+		
+		//check ownership
+		if (prop[loc].owner_id == -1){
+			prop[loc].owner_id = p[i].id;
+		} else if (prop[loc].owner_id != p[i].id){
+			int owner_id = prop[loc].owner_id;
+			int rent = prop[loc].rent;
 
-
-
-
+		if(!transaction(&p[i], &p[owner_id], rent)){
+			return 0;
+		}
+	}
 
 	}
 	return 1;
