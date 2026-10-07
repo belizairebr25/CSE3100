@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
@@ -58,9 +57,13 @@ void add_first(node **head, node *newnode)
 //return a pointer to the removed content
 node * remove_first(node **head) 
 {
-	node *removed = *head;
-	*head = removed->next;
-	return removed;
+	if (head != NULL){
+		node *removed = *head;
+		*head = removed->next;
+		return removed;
+	} else {
+	perror("Error");
+	return NULL;
 }
 
 //remove all the nodes in the list
@@ -83,8 +86,10 @@ int location_match(node *head, THost host)
 	while (curr != NULL){
 		if(host.x == curr->host.x && host.y == curr->host.y){
 			return 1;
+		}
+		curr = curr->next;
 	}
-		return 0;
+	return 0;
 }
 
 
