@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
+#include <errno.h>
 enum TYPE {S, I, R};
 
 //TODO: Implement idx
@@ -9,7 +10,8 @@ enum TYPE {S, I, R};
 //this integer should be unique for every x, y pair in your grid
 int idx(int x, int y, int k)
 {
-
+	//shift coordinates to 2k
+	return (x+k) * (2*k + 1) + (y+k);
 }
 
 typedef struct Host
@@ -30,7 +32,15 @@ typedef struct node_tag {
 //return a pointer to the created node
 node * create_node(THost host) 
 {
-
+	node *newnode = malloc(sizeof(*newnode));
+	if (newnode == NULL){
+		printf("Error Code: %d\n", errno);
+		perror("Error");
+		return NULL; //TODO: make sure main checks for error
+	}
+	newnode->host = host;
+	newnode->next = NULL;
+	return newnode;
 }
 
 //add_first() should add to the beginning of a linked list
@@ -38,7 +48,8 @@ node * create_node(THost host)
 //note that it does not return a value 
 void add_first(node **head, node *newnode)
 {
-
+	newnode->next = *head;
+	*head = newnode;
 }
 
 
@@ -47,14 +58,20 @@ void add_first(node **head, node *newnode)
 //return a pointer to the removed content
 node * remove_first(node **head) 
 {
-
+	node *removed = *head;
+	*head = removed->next;
+	return removed;
 }
 
 //remove all the nodes in the list
 //and free all the allocated memory
 void remove_all(node **head)
 {
-
+	while(*head != NULL){
+		node *p = (*head)->next;
+		free(*head);
+		*head = p;
+	}
 }
 
 //location_match checks whether a linked list contains
@@ -62,7 +79,12 @@ void remove_all(node **head)
 //return 1 if there is a match, 0 if not
 int location_match(node *head, THost host)
 {
-
+	node *curr = head;
+	while (curr != NULL){
+		if(host.x == curr->host.x && host.y == curr->host.y){
+			return 1;
+	}
+		return 0;
 }
 
 
@@ -204,3 +226,4 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
