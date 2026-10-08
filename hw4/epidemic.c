@@ -57,13 +57,14 @@ void add_first(node **head, node *newnode)
 //return a pointer to the removed content
 node * remove_first(node **head) 
 {
-	if (head != NULL){
+	if (head != NULL && *head != NULL){
 		node *removed = *head;
 		*head = removed->next;
 		return removed;
 	} else {
 	perror("Error");
 	return NULL;
+	}
 }
 
 //remove all the nodes in the list
@@ -138,18 +139,26 @@ int one_round(THost *hosts, int m, node *p_arr[], int n_arr, int k, int T)
             if(location_match(p_arr[index], hosts[i]))
             {
             	//TODO: fill in what should happen here (not long)
+				hosts[i].type = I;
+				hosts[i].t = 0;
+
 			}
         }
 		else if(hosts[i].type == I)
         {
            	//TODO: fill in what should happen here (not long)
+			hosts[i].t++;
+			if(hosts[i].t >= T){
+				hosts[i].type = R;
+			}
         }
     }
 
 	//TODO: fill in code below
     //reset all linked lists
-
-
+	for(int i = 0; i < n_arr; i++){
+		remove_all(&p_arr[i]);
+	}
 
 	for(int i = 0; i < m; i++)
 	{
@@ -159,10 +168,10 @@ int one_round(THost *hosts, int m, node *p_arr[], int n_arr, int k, int T)
 		//TODO: update locations for all hosts
 		switch(r)
 		{
-			case 0: hosts[i].y = 
-			case 1: hosts[i].x =
-			case 2: hosts[i].y =
-			case 3: hosts[i].x =
+			case 0: hosts[i].y = (hosts[i].y < k) ? hosts[i].y + 1 : -k; break; //up
+			case 1: hosts[i].x = (hosts[i].x < k) ? hosts[i].x + 1 : -k; break; //r
+			case 2: hosts[i].y = (hosts[i].y > -k) ? hosts[i].y - 1 : k; break; //d
+			case 3: hosts[i].x = (hosts[i].x > -k) ? hosts[i].x - 1 : k; break; //l
 		}
 
 		//buid linked list for I hosts
@@ -228,7 +237,10 @@ int main(int argc, char *argv[])
 
 	//simulation
 	while(one_round(hosts, m, p_arr, N, k, T));
-
+	
+	for(int i = 0; i < N; i++){
+		remove_all(&p_arr[i]);
+	}
 	return 0;
 }
 
