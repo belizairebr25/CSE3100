@@ -112,9 +112,22 @@ void    child_main(int fdp[], int fdc[], int seed)
 
     // TODO
     //  close unused file descriptors
-    //  send max value to the parent 
+    close(fdc[0]);//no need to read from child pipe
+	close(fdp[1]);//no need to write to parent pipe
+	//  send max value to the parent 
+	int max = MAX_VALUE;
+	write(fdc[1], &max, sizeof(max));
     //  repeat the following until guess from parent is correct 
-    //      wait for a guess from parent 
+    int correct = 1;
+	int guess;
+	while(correct != 0){
+		read(fdp[0], guess, sizeof(guess));//wait for parent to write guess
+		correct = gmn_check(gmn, guess);//check guess
+		write(fdc[1], correct, sizeof(correct));//send relative correctness
+	}
+	//correct guess
+	write
+	//      wait for a guess from parent 
     //      call gmn_check() 
     //      send the result to parent
     //  send the final message back (as a string) 
