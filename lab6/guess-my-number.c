@@ -116,7 +116,7 @@ void    child_main(int fdp[], int fdc[], int seed)
 	close(fdp[1]);//no need to write to parent pipe
 	//  send max value to the parent 
 	int max = MAX_VALUE;
-	write(fdc[1], &max, sizeof(max));
+	write(fdc[1], max, sizeof(max));
     //  repeat the following until guess from parent is correct 
     int correct = 1;
 	int guess;
@@ -124,14 +124,15 @@ void    child_main(int fdp[], int fdc[], int seed)
 		read(fdp[0], guess, sizeof(guess));//wait for parent to write guess
 		correct = gmn_check(gmn, guess);//check guess
 		write(fdc[1], correct, sizeof(correct));//send relative correctness
+		//write(fdc[1], gmn->message, sizeof(gmn->message));//send incorrect message?
 	}
-	//correct guess
-	write
-	//      wait for a guess from parent 
-    //      call gmn_check() 
-    //      send the result to parent
-    //  send the final message back (as a string) 
-    //  close all pipe file descriptors
+	if(correct == 0)
+		write(fdc[1], gmn->message, sizeof(gmn->message));
+	//  close all pipe file descriptors
+	close(fdc[0]);
+	close(fdc[1]);
+	close(fdp[0]);
+	close(fdp[1]);
 
     exit(EXIT_SUCCESS);
 }
@@ -199,15 +200,21 @@ int main(int argc, char *argv[])
 
     // TODO
     //      close unused pipe file descriptor
+	close(fdp[0]);
+	close(fdc[1]);
     //      get max from the child
-    
+	int max;
+    read(fdc[0], max, sizeof(int));
+
     do { 
         guess = (min + max)/2;
         printf("My guess: %d\n", guess);
 
         // TODO
         //     send guess to the child
+		write(fdp[1], guess, sizeof(guess));
         //     wait for the result from the child
+		read(fdc[0], result, sizeof(int));
 
         if (result > 0)
             min = guess + 1;
@@ -220,7 +227,13 @@ int main(int argc, char *argv[])
 
     // TODO
     //      receive the final message and print it to stdout
+	read(fdc[0], message, MSG_BUF_SIZE);
+	printf("%s", *message);
     //      close all pipe file descriptors
+	close(fdc[0]);
+	close(fdc[1]);
+	close(fdp[0]);
+	close(fdp[1]);
     //wait for the child process to finish
     wait(NULL);
     return 0;
