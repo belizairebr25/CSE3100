@@ -73,17 +73,44 @@ void start_program(Program *programs, int num_programs, int cur)
 		if(pid == -1)
 			die("fork() failed.");
 		if(pid == 0){
-			//local args
-			close(programs[curr].fd_in);
-			dup2(programs[curr].fd_out, STDOUT_FILENO);
-			programs[curr].pid = pid;
-			execvp(programs[curr].name, programs[curr].argv);
-			die("execlp() failed.");
-		} else {
-			wait_on_program(pid);
-			
-}
+			//child
+			//redirect fds
+			if (programs[cur].fd_in != -1){
+				if(dup2(programs[cur].fd_in, STDIN_FILENO) == -1)
+					die("dup2 stdin failed");
+				close(programs[cur].fd_in);
+			}
+			if (programs[cur].fd_out != -1){
+				if(dup2(programs[cur].fd_out, STDOUT_FILENO) == -1)
+					die("dup2 stdout failes");
+				close(programs[cur].fd_out);
+			}
+			//close unused fds
+			for(int i = 0; i < num_programs; i++){
+                if(programs[i].fd_in != -1)
+                    close(programs[i].fd_in);
+                if(programs[i].fd_out != -1)
+                    close(programs[i].fd_out);
+            }
 
+			//replace process
+			execvp(programs[cur].argv[0], programs[cur].argv);
+			die("execvp() failed.");
+		} else {
+			//parent
+			programs[cur].pid = pid;
+
+			if(cur == num_programs - 1){
+				for(int i = 0; i < num_programs; i++){
+					if(programs[i].fd_in != -1)
+						close(programs[i].fd_in);
+					if(programs[i].fd_out != -1)
+						close(programs[i].fd_out);
+				}
+			}
+			
+	}
+}
 /* Wait on a program. 
  *
  * Parameter:
@@ -98,12 +125,15 @@ void start_program(Program *programs, int num_programs, int cur)
 int wait_on_program(Program *prog)
 {
     int exitStatus;
-
-    if (prog->pid < 0)
+	pid_t result = waitpid(prog->pid, &exitStatus, 0);
+    if (result == -1){
+		perror("invalid PID passed to wait_on_program");
         return -1;
-
-    // TODO
-    return WEXITSTATUS(exitStatus);
+	}
+	if(WIFEXITED(exitStatus)){
+    	return WEXITSTATUS(exitStatus);
+	}
+	return -1;
 }
 
 /* This function creates pipes to be used for connecting two pipeline stages.
@@ -126,11 +156,11 @@ void prepare_pipes(Program *programs, int num_programs)
 {
 	//iteratively assign pipe fds to program structs
 	int pfd[2];
-	for(int i = 0; i < num_programs; i++){
+	for(int i = 0; i < (num_programs - 1); i++){
 		if(pipe(pfd) == -1)
 			die("pipe() failed.");
-		(programs[i]).fd_in = pfd[0]; //read end
-		(programs[i+1]).fd_out = pfd[1]; //write end
+		programs[i].fd_out = pfd[PIPEFD_WRITE]; 
+		programs[i+1].fd_in = pfd[PIPEFD_READ];
 	}		
 
 }
