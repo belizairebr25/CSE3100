@@ -147,3 +147,13 @@ DESCRIPTOR RELATIONSHIP:
 fileno(fp)                  Get descriptor from FILE *
 fdopen(fd, mode)             Create FILE * from existing descriptor
 
+
+Child termination	WIFEXITED(status)	WEXITSTATUS(status)
+return 0;			True				0
+return 1;			True				1
+return 42;			True				42
+return 258; 		True				2 (rolls over after 256)
+exit(127);			True				127
+return -1;			True				255 (typically)
+abort();			False				Don't use
+Killed by SIGKILL	False				Don't use
