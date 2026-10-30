@@ -1,0 +1,14 @@
+C EXAM SKELETON INDEX
+
+01_dynamic_array_int.c: Resizable array of int
+02_singly_linked_list_int.c: Singly linked list, delete-by-value, pointer-to-pointer
+03_stack_int.c: Dynamic LIFO stack
+04_circular_queue_int.c: Fixed-capacity FIFO circular queue
+05_hash_table_string_int.c: String keys to int values, separate chaining
+06_binary_search_tree_int.c: BST insert/find/inorder/free
+07_string_and_input_helpers.c: getline, trim whitespace, strtok
+08_file_read_lines.c: Read file line by line
+09_fork_exec_wait.c: fork/execvp/waitpid
+10_pipe_two_commands.c: Two-process pipeline with pipe/dup2
+11_mutex_thread_template.c: pthread + mutex
+12_error_handling_patterns.c: realloc, write-all, cleanup labels

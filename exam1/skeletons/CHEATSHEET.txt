@@ -1,0 +1,173 @@
+C EXAM SKELETONS — QUICK CHEATSHEET
+===================================
+
+Purpose
+-------
+These files are small patterns to copy and adapt, not a single library. Read the
+relevant file before copying it, remove its demo main() if combining it with an
+existing program, and rename types/functions to fit the assignment.
+
+Compile a single program:
+    gcc -Wall -Wextra -Wpedantic -g solution.c -o solution
+
+Debug memory/undefined behavior:
+    gcc -Wall -Wextra -g -fsanitize=address,undefined solution.c -o solution
+
+For pthreads:
+    gcc -Wall -Wextra -Wpedantic -g solution.c -o solution -pthread
+
+For descriptor/process inspection:
+    valgrind --track-fds=yes ./solution
+    strace -f -e trace=process,desc ./solution    (if strace is installed)
+
+
+FILE INDEX: WHAT TO REACH FOR
+-----------------------------
+01_dynamic_array_int.c
+    Resizable array of int: initialize, append, get/set, remove, free.
+    Use when the number of elements is not known in advance and indexing matters.
+
+02_singly_linked_list_int.c
+    Singly linked list: node allocation, insertion, deletion, traversal, cleanup.
+    Watch head deletion and update links before freeing a node.
+
+03_stack_int.c
+    Dynamic LIFO stack: push/pop/peek.
+    Push adds to the top; pop removes the most recently pushed item.
+
+04_circular_queue_int.c
+    Fixed-capacity FIFO queue using a circular buffer.
+    Track front, count, and capacity; do not confuse full and empty.
+
+05_hash_table_string_int.c
+    String keys mapped to int values, using separate chaining.
+    Hashing chooses a bucket; collisions still require comparing keys with strcmp.
+    Duplicate-key behavior depends on the implementation—inspect it before reuse.
+
+06_binary_search_tree_int.c
+    BST insert/find/inorder traversal/free.
+    Inorder traversal visits keys in sorted order. A badly unbalanced tree can
+    degrade from O(log n) average behavior to O(n).
+
+07_string_and_input_helpers.c
+    Safe line input, whitespace trimming, and tokenization examples.
+    getline() can resize a buffer; remember to free it.
+    strtok() modifies its input and uses internal state; it is not for preserving
+    the original string or for nested tokenization without care.
+
+08_file_read_lines.c
+    Read a text file one line at a time with getline().
+    Good when processing each line independently or when the whole file need not
+    fit in memory.
+
+09_fork_exec_wait.c
+    Basic fork(), execvp(), and waitpid() structure.
+    fork(): -1 = failure, 0 = child, positive = parent receives child PID.
+    exec succeeds by replacing the process; code after exec runs only on failure.
+    Parent should wait for children and inspect status with WIFEXITED,
+    WEXITSTATUS, WIFSIGNALED, etc.
+
+10_pipe_two_commands.c
+    Connect one process's stdout to another process's stdin with pipe() and dup2().
+    Pipe descriptors: p[0] is read end; p[1] is write end.
+    Close unused ends in BOTH parent and child. A leftover write end can prevent
+    the reader from ever seeing EOF.
+
+11_mutex_thread_template.c
+    pthread creation/join and mutex-protected shared data.
+    Threads share the same address space. Protect shared mutable state consistently.
+    Join created threads and destroy initialized synchronization objects when done.
+
+12_error_handling_patterns.c
+    Common error checks, write-all loop, and cleanup-label style.
+    A successful read()/write() may transfer fewer bytes than requested.
+    Handle EINTR by retrying where appropriate. Do not assume one call transfers
+    an entire buffer.
+
+13_file_to_array.c
+    Read an entire file into a dynamically growing byte buffer with open()/read().
+    Returns a buffer plus its length. Caller owns the returned buffer and must free().
+    The buffer includes an extra '\0' for text convenience, but length is the
+    authoritative size. Files can contain arbitrary bytes, including embedded NULs.
+
+
+CORE C MEMORY RULES
+-------------------
+- malloc(n): allocates n bytes; contents are uninitialized.
+- calloc(count, size): allocates and zero-initializes the block.
+- realloc(ptr, new_size): may move the allocation. Use a temporary pointer:
+      void *tmp = realloc(ptr, new_size);
+      if (tmp == NULL) { /* ptr is still valid; handle failure */ }
+      else ptr = tmp;
+- free(ptr): release allocated memory. Do not use the pointer afterward.
+- Check allocation results before dereferencing.
+- Avoid integer overflow when calculating allocation sizes or capacities.
+- Know ownership: who must free a buffer/node, and whether a function borrows or
+  takes ownership of a pointer.
+- For a dynamically growing array, track logical length separately from capacity.
+- C strings need a terminating '\0'; raw byte buffers should be tracked by length.
+
+
+FILES AND BYTE I/O
+------------------
+- open(path, flags, mode): returns a file descriptor (int) or -1.
+  Include <fcntl.h> and <unistd.h>; mode is needed with O_CREAT.
+- read(fd, buf, count): returns bytes read, 0 at EOF, or -1 on error.
+- write(fd, buf, count): returns bytes written, or -1 on error.
+- close(fd): close each descriptor when it is no longer needed.
+- read()/write() can be short. For full transfers, loop until done, EOF, or error.
+- A file is a sequence of bytes. In C, sizeof(char) is exactly 1 byte.
+  On typical systems one byte is 8 bits. A byte buffer may contain non-text data.
+- read() does NOT append '\0'. If you need a C string, allocate one extra byte
+  and explicitly add the terminator after the bytes read.
+- strlen() only measures a NUL-terminated string; it is not a binary-buffer length.
+- For text files, getline() is convenient; for whole-file data, use 13_file_to_array.c.
+
+
+PROCESSES, EXEC, PIPES
+----------------------
+- fork() duplicates the process. Parent and child then execute independently.
+- Always branch on all three fork() outcomes: error (-1), child (0), parent (>0).
+- execvp(file, argv): argv must end with NULL; argv[0] is conventionally program name.
+  If execvp() returns, it failed; check/report the error and _exit() in a child.
+- waitpid(pid, &status, 0): waits for a specific child. Check return value.
+  Use WIFEXITED(status) before WEXITSTATUS(status); use WIFSIGNALED for signal exits.
+- pipe(p): p[0] reads, p[1] writes.
+- dup2(oldfd, newfd): makes newfd refer to the same open file description as oldfd.
+  Common redirects: dup2(pipefd[0], STDIN_FILENO), dup2(pipefd[1], STDOUT_FILENO).
+- Close original pipe descriptors after dup2() if no longer needed.
+- EOF reaches a pipe reader only after ALL file descriptors referring to its write end
+  have been closed. Descriptor leaks can therefore cause deadlocks.
+- Flush stdio before fork() if buffered output must not be duplicated.
+- For fatal child-side failures, _exit() is often preferable to exit() because it
+  avoids flushing inherited stdio buffers a second time.
+- A child should close every pipe end it does not use. The parent should close pipe
+  ends as soon as it no longer needs them.
+- To avoid zombies, wait for every child you create.
+- On partial setup failure after some children have started, clean up or terminate
+  those children and wait for them; do not simply abandon them.
+
+
+THREADS AND MUTEXES
+-------------------
+- pthread_create() starts a thread; pthread_join() waits for it.
+- A mutex protects shared data only if every relevant access uses the same mutex.
+- Avoid holding a mutex while doing long blocking work unless necessary.
+- Do not return a pointer to a thread's expired stack-local variable.
+- Check pthread function return values: pthread functions usually return an error
+  number directly rather than returning -1 and setting errno.
+
+
+QUICK DEBUGGING CHECKLIST
+-------------------------
+1. Compile with -Wall -Wextra -Wpedantic.
+2. Check every return value: malloc/realloc, open, read, write, pipe, fork, dup2,
+   exec, pthread operations, waitpid, close when relevant.
+3. Confirm who owns each allocation and who closes each descriptor.
+4. Test empty input, one item, multiple items, and failure/edge cases.
+5. For pipes: draw every process and pipe end; close unused ends in every process.
+6. For loops around read()/write(): handle partial transfers and EINTR.
+7. For children: remember exec replaces the process only on success; wait for all.
+8. For data structures: test empty, one-element, first/last-element deletion, and free.
+9. Run AddressSanitizer for memory errors and Valgrind --track-fds=yes for descriptors.
+10. Keep the solution no more complicated than the specification requires.

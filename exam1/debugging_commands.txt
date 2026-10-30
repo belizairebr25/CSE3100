@@ -1,0 +1,149 @@
+Debugging
+GDB
+	gdb ./main                              Start GDB
+	run                                     Run program
+	run arg1 arg2                           Run with arguments
+	break main                              Break at main
+	break file.c:42                         Break at line 42
+	next                                    Execute next line (don't enter functions)
+	step                                    Execute next line (enter functions)
+	continue                                Continue execution
+	print variable                          Print variable value
+	display variable                        Print variable after every step
+	info locals                             Show local variables
+	info args                               Show function arguments
+	backtrace                               Show function call stack
+	frame 2                                 Select stack frame 2
+	list                                    Show surrounding source code
+	watch variable                          Break when variable changes
+	quit                                    Exit GDB
+Valgrind
+	valgrind --track-fds=yes ./executable  		check file descriptors
+	valgrind --leak-check=yes ./executable		check memory leaks
+
+Vim
+	gg				Beginning of file
+	G				End of file
+	dd				Delete line
+	yy				Copy line
+	p				Paste
+	ciw				Change word
+	:%s/old/new/g	Replace throughout file
+	:r filename		Insert another file's contents
+	:set paste		Disable automatic indentation while pasting
+	:set nonu		Disable line numbers
+	:%y+			Copy whole file into system buffer
+
+C macros
+STDIN_FILENO	<unistd.h>	Standard input (0)
+STDOUT_FILENO	<unistd.h>	Standard output (1)
+STDERR_FILENO	<unistd.h>	Standard error (2)
+O_RDONLY	<fcntl.h>	Open for reading
+O_WRONLY	<fcntl.h>	Open for writing
+O_RDWR	<fcntl.h>	Open for reading and writing
+O_CREAT	<fcntl.h>	Create if nonexistent
+O_TRUNC	<fcntl.h>	Truncate existing file
+O_APPEND	<fcntl.h>	Append to end of file
+SEEK_SET	<unistd.h>	Seek from beginning
+SEEK_CUR	<unistd.h>	Seek from current offset
+SEEK_END	<unistd.h>	Seek from end
+
+Redirection
+	dup() OS picks next available file descriptor to duplicate parameter fd
+	ex:
+		int fd = open("test.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		int fd2 = dup(fd);
+		write(fd, "ABC", 3);
+		write(fd2, "DEF", 3);
+	writes:
+		ABCDEF to test.txt
+
+	dup2() Programmer provides file descriptor to hold duplicated descriptor
+	ex:
+		dup2(oldfd, newfd);
+	does:
+		can use macros like STDOUT_FILENO as newfd to redirect print statements to wherever oldfd pointed
+
+execvp() Replaces current process image with program specified by filename
+    ex:
+        char *args[] = {"ls", "-l", NULL};
+        execvp("ls", args);
+
+    does:
+        Searches PATH for executable named "ls"
+        Passes arguments as an array of strings
+        Does NOT create a new process; replaces the calling process
+        Returns only if an error occurs (-1)
+
+execlp() Same as execvp(), but arguments are passed individually
+    ex:
+        execlp("ls", "ls", "-l", NULL);
+
+    does:
+        Searches PATH for executable named "ls"
+        Arguments are passed individually, terminated by NULL
+        First argument conventionally becomes argv[0]
+
+    descriptor preservation:
+        Open file descriptors survive exec() by default
+        This includes descriptors redirected using dup2()
+        Descriptors marked FD_CLOEXEC are automatically closed
+
+    ex:
+        int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        dup2(fd, STDOUT_FILENO);
+        close(fd);
+
+        char *args[] = {"ls", "-l", NULL};
+        execvp("ls", args);
+
+    does:
+        Replaces current process with ls -l
+        ls inherits redirected stdout
+        Output goes to output.txt instead of terminal
+
+    IMPORTANT:
+        exec() does NOT create a child process
+        Use fork() first if you want to preserve the parent process
+        exec() only returns on failure
+
+f family for files
+# FILE I/O
+
+fopen(filename, mode)       Open file, returns FILE *
+fclose(fp)                  Close stream, flush output
+
+MODES:
+"r"     Read
+"w"     Write, truncate/create
+"a"     Append, create if needed
+"r+"    Read/write
+"w+"    Read/write, truncate/create
+"a+"    Read/append, create if needed
+
+READING:
+fgetc(fp)                   Read character, returns int / EOF
+fgets(buf, size, fp)        Read line/string, returns NULL on failure/EOF
+fread(buf, size, count, fp) Read binary data, returns elements read
+fscanf(fp, format, ...)     Formatted input
+
+WRITING:
+fputc(c, fp)                Write character
+fputs(str, fp)              Write string, no automatic newline
+fwrite(buf, size, count, fp) Write binary data
+fprintf(fp, format, ...)    Formatted output
+
+POSITIONING:
+fseek(fp, offset, whence)   Change file position
+ftell(fp)                   Get current position
+rewind(fp)                  Return to beginning, clear error/EOF
+
+ERRORS:
+feof(fp)                    Check EOF indicator
+ferror(fp)                  Check error indicator
+clearerr(fp)                Clear both indicators
+
+DESCRIPTOR RELATIONSHIP:
+fileno(fp)                  Get descriptor from FILE *
+fdopen(fd, mode)             Create FILE * from existing descriptor
+

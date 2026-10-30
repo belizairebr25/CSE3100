@@ -4,9 +4,8 @@
 #include <unistd.h>
 
 int main(){
-	int fd = open("test.txt", O_RDWR);
-	char buff[10];
-	int v = read(fd, buff, 10);
-	printf("%d", v);
+	int fd = open("test.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	dup2(fd, STDOUT_FILENO);//redirect to file
+	printf("ABC");
 	return 0;
 }
