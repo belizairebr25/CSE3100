@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include "matrix.h"
 
-#define     NUM_THREADS     2
+#define     NUM_THREADS     64
 
 typedef struct {
     //unsigned int id;
@@ -45,10 +45,13 @@ TMatrix * addMatrix_thread(TMatrix *m, TMatrix *n)
 	pthread_t threads[NUM_THREADS];
 	thread_arg_t args[NUM_THREADS];
 
-	unsigned int mid = m->nrows / 2;
-
-	args[0] = (thread_arg_t){0, mid, m, n, t};
-	args[1] = (thread_arg_t){mid, m->nrows, m, n, t};
+	for (unsigned int i = 0; i < NUM_THREADS; i++){
+		args[i] = (thread_arg_t){
+			i * m->nrows / NUM_THREADS,
+			(i + 1) * m->nrows / NUM_THREADS, 
+			m, n, t
+		};
+	}
 
 	for (int i = 0; i < NUM_THREADS; i++){
 		int rc = pthread_create(&threads[i], NULL, thread_main, &args[i]);
