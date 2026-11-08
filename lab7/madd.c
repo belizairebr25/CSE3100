@@ -6,23 +6,21 @@
 #define     NUM_THREADS     2
 
 typedef struct {
-    unsigned int id;
+    //unsigned int id;
+	unsigned int start;
+	unsigned int end;
     TMatrix *m, *n, *t;
 } thread_arg_t;
 
 /* the main function of threads */
-static void * thread_main(TMatrix *m, TMatrix *n)
+static void * thread_main(void *arg)
 {
     // TODO
-	thread_arg_t thread1;
-	thread_arg_t->m = m;
-	thread_arg_t->n = n;
-	thread_arg_t->t = newMatrix(m->nrows, m->ncols);
-	pthread_crate(&(thread1->id), NULL, thread1_f, NULL);
-	//do thread 0 stuff
-	for (unsigned int i = 0; i < (thread_arg_t->m->nrows)/(unsigned)2; i++)
-		for(unsigned int j = 0; < (thread_arg_t->n->ncols)/(unisgned)2; i++)
-			thread_arg_t->t->data[i][j] = m->data
+	thread_arg_t *args = (thread_arg_t *)arg;
+
+	for (unsigned int i = args->start; i < args->end; i++)
+		for(unsigned int j = 0; j < args->m->ncols; j++)
+			args->t->data[i][j] = args->m->data[i][j] + args->n->data[i][j];
     return NULL;
 }
 
@@ -44,17 +42,28 @@ TMatrix * addMatrix_thread(TMatrix *m, TMatrix *n)
         return t;
 
     // TODO
-	/*for (unsigned int i = 0; i < m->nrows; i++)
-		for (unsigned int j = 0; j < m->ncols; j++)
-			t->data[i][j] = m->data[i][j] + n->data[i][j];
-    return t;*/
-	//make two threads, store id, m and n in their thread struct
-	//pass to main which divides matrix thread work top down?
-	//pass to thread functions
-	//return to thread main and wait for each other
-	//return result here
-	//kill john lennon
-	TMatrix *p_arg[] = {m, n};
-	t = thread_main(p_arg);
+	pthread_t threads[NUM_THREADS];
+	thread_arg_t args[NUM_THREADS];
+
+	unsigned int mid = m->nrows / 2;
+
+	args[0] = (thread_arg_t){0, mid, m, n, t};
+	args[1] = (thread_arg_t){mid, m->nrows, m, n, t};
+
+	for (int i = 0; i < NUM_THREADS; i++){
+		int rc = pthread_create(&threads[i], NULL, thread_main, &args[i]);
+		if (rc != 0){
+			perror("thread creation fail 3:");
+			exit(EXIT_FAILURE);
+		}
+	}
+	for (int i = 0; i < NUM_THREADS; i++){
+		int rc = pthread_join(threads[i], NULL);
+		if (rc != 0){
+			perror("thread join fail 3:");
+			exit(EXIT_FAILURE);
+		}
+	}
 	return t;
+	
 }
