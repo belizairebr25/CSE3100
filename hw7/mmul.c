@@ -5,7 +5,7 @@
 
 // Search TODO to find the locations where code needs to be completed
 
-#define     NUM_THREADS     2
+#define     NUM_THREADS     64
 
 typedef struct {
     //unsigned int id;
