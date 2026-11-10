@@ -114,24 +114,24 @@ void print_printer_summary(printer_t *pprinter, int nprinters)
 
 void printer_single(printer_t *pprinter)
 {
-    int done = 0;
-    job_queue_t *jq = pprinter->jq;
+    int done = 0; //shared
+    job_queue_t *jq = pprinter->jq; //shared
 
     // keep track of how many jobs are printed by this printer
-    pprinter->njobs = 0;
+    pprinter->njobs = 0; //indie mutex?
     while (! done) {
-        int     r;
-        r = q_num_jobs(jq); // get the number of remaining jobs
+        int     r; //thread local
+        r = q_num_jobs(jq); // get the number of remaining jobs;  //check mutex
         if (r <= 0) {       // done ?
             done = 1;
             continue;
         }
-        int job = q_fetch_job(jq, pprinter->id);
+        int job = q_fetch_job(jq, pprinter->id); //check mutex
 
         // print the job
-        print_job(job);
+        print_job(job); //just sleeps
 
-        pprinter->njobs ++;
+        pprinter->njobs ++; //local struct
     }
 }
 
@@ -139,6 +139,34 @@ void printer_single(printer_t *pprinter)
 void * printer_main(void * arg)
 {
     // TODO
+	//only shared thing is the job queue, locks when a thread is accessing;
+	//make sure threads don't compete to do the same jobs;
+	//when a thread is done it should scan for an available job and-
+	//-lock it before working
+	int done = 0;
+	int r; //number of remaining jobs
+	//get arguments
+	printer_t *printer = (printer_t *)arg;
+	printer->njobs = 0; //init num jobs this printer has done
+	while(! done){
+		//lock jobs
+		if(pthread_mutex_lock(&(printer->jq->mutex)) != 0)
+			die("mutex lock fail");
+		//get job
+		r = q_num_jobs((printer->jq));//get num remaining jobs
+		if(r <=0){
+			done = 1;
+			if(pthread_mutex_unlock((&printer->jq->mutex)) != 0)
+				die("mutex unlock fail");
+			continue;
+		}
+		int job = q_fetch_job(printer->jq, printer->id);
+		//unlock job queue
+		if(pthread_mutex_unlock(&(printer->jq->mutex)) != 0)
+			die("mutex unlock fail");
+		print_job(job);
+		printer->njobs ++;
+	}
     return arg;
 }
 
@@ -178,6 +206,9 @@ int main(int argc, char *argv[])
 
     // define job_queue and initialize it
     job_queue_t job_queue;
+	//init job queue mutex
+	if(pthread_mutex_init(&(job_queue.mutex), NULL) != 0)
+		die("mutex init fail");
 
     q_init(&job_queue, num_jobs);
 
@@ -199,9 +230,39 @@ int main(int argc, char *argv[])
      *      wait for other threads
      *  Also, properly init and desctroy mutex.
      *  */
+	//thread id array
+	pthread_t threads[num_printers];
+	//printer/arg arrays
+	//printer_t printers[DEFAULT_NUM_PRINTERS];
+	//fill argument array
+	for (unsigned int i = 0; i < num_printers; i++){
+		printers[i] = (printer_t){
+			i, //printer id value
+			&job_queue, //reference to job queue
+			0, //num jobs completed
+			(unsigned int)i //thread id
+		};
+	}
+	
+	//create threads loop
+	for (int i = 0; i < num_printers; i++){
+		int rc = pthread_create(&threads[i], NULL, printer_main, &printers[i]);
+		if(rc != 0)
+			die("thread join fail");
+		printers[i].thread_id = threads[i]; //set thread id
+	}
+
+	//join threads loop
+	for (int i = 0; i < num_printers; i++){
+		int rc = pthread_join(threads[i], NULL);
+		if(rc != 0)
+			die("thread join fail");
+	}
 
     q_destroy(&job_queue);
-
+	//destroy mutex
+	if (pthread_mutex_destroy(&(job_queue.mutex)) != 0)
+		die("mutex destroy fail");
     print_printer_summary(printers, num_printers);
 
     return 0;

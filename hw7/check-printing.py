@@ -7,10 +7,10 @@ def     sys_error(s):
     sys.exit(1)
 
 # regular expressions 
-ptn_event = re.compile('^(Printer)\s+(\d+).+job\s+(\d+)');
-ptn_summary = re.compile('(Printer)\s+(\d+).+\s(\d+)\s+jobs');
-ptn_total = re.compile('^Total.+(d+)');
-ptn_config = re.compile('(jobs|printers)=(\d+)');
+ptn_event = re.compile(r'^(Printer)\s+(\d+).+job\s+(\d+)');
+ptn_summary = re.compile(r'(Printer)\s+(\d+).+\s(\d+)\s+jobs');
+ptn_total = re.compile(r'^Total.+(d+)');
+ptn_config = re.compile(r'(jobs|printers)=(\d+)');
 
 n_lines = 0
 num_jobs = num_printers = 0
