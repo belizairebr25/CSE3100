@@ -150,7 +150,7 @@ void * thread_c(void * arg_in)
 {
     thread_arg_t *arg = arg_in;
 	
-	//fill struct
+	//send max value
 	//lock mutex
 	if(pthread_mutex_lock(&(arg->mutex)) != 0)
 		die("mutex lock fail");
@@ -173,6 +173,31 @@ void * thread_c(void * arg_in)
     //      wait for a guess from thread_p 
     //      call gmn_check() 
     //      send the result and, if the guess is correct, the final message to thread_p
+	int result = 1;
+	while(result != 0){
+		//wait for a guess
+		//lock the mutex
+		if(pthread_mutex_lock(&arg->mutex,) != 0)
+			die("mutex lock fail");
+		int done = 0;
+		while (1 != done){
+			if(pthread_cond_wait(&arg->cond_guess, &arg->mutex) != 0)
+				die("cond_wait fail");
+		}
+		//cond met
+		//check guess
+		result = gmn_check(gmn, arg->guess); 
+		arg->result = result;
+		strcpy(arg->message, gmn.message);
+		//signal read result ready
+		if(pthread_cond_signal(&arg->cond_result), != 0)
+			die("signal fail");
+		
+		//unlock mutex
+		if(pthread_mutex_unlock(&arg->mutex) != 0)
+			die("mutex unlock fail");
+	}
+
 
     return NULL;
 }
@@ -185,16 +210,25 @@ void * thread_p(void *arg_in)
     int min = 1;
     int max;
     int guess;
-    int result;
+    int result = 1;
 
     // add some delays, but not using rand() 
+	//what? don't we have to wait for the condt signal anyways?
     // the delay can be controlled from the command line
     my_msleep(arg->seed);
 
     // TODO
     //      get max from thread_c
-
+	//lock the mutex	
     do { 
+		if(pthread_mutex_lock(&arg->mutex) != 0)
+			die("lock fail");
+		int done = 0;
+		//cond wait
+		while(1 != done){
+			if(pthread_cond_wait(&arg->cond_result, &arg->mutex) != 0)
+				die("cond_wait fail");
+		}
         guess = (min + max)/2;
         printf("My guess: %d\n", guess);
 
