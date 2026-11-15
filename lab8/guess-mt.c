@@ -255,7 +255,7 @@ void * thread_p(void *arg_in)
 		//get result
 		if(pthread_mutex_lock(&arg->mutex) != 0)
 			die("lock fail");
-		while(arg->status != 1){
+		while(arg->status != S_RESULT){
 			if(pthread_cond_wait(&arg->cond_result, &arg->mutex) != 0)
 				die("wait fail");
 		}
