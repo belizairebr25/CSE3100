@@ -155,7 +155,10 @@ void * thread_c(void * arg_in)
 	if(pthread_mutex_lock(&(arg->mutex)) != 0)
 		die("mutex lock fail");
 	arg->max = MAX_VALUE;
-	
+	//broadcast max val ready
+	arg->status = 1;
+	if(pthread_cond_signal(&arg->cond_result) != 0)
+		die("signal fail");
 	//unlock mutex
 	if(pthread_mutex_unlock(&arg->mutex) != 0)
 		die("mutex lock fail");
@@ -177,28 +180,28 @@ void * thread_c(void * arg_in)
 	while(result != 0){
 		//wait for a guess
 		//lock the mutex
-		if(pthread_mutex_lock(&arg->mutex,) != 0)
+		if(pthread_mutex_lock(&arg->mutex) != 0)
 			die("mutex lock fail");
-		int done = 0;
-		while (1 != done){
+		while (1 != arg->status){
 			if(pthread_cond_wait(&arg->cond_guess, &arg->mutex) != 0)
 				die("cond_wait fail");
 		}
+		arg->status = 0; //reset status
 		//cond met
 		//check guess
-		result = gmn_check(gmn, arg->guess); 
+		result = gmn_check(&gmn, arg->guess); 
 		arg->result = result;
 		strcpy(arg->message, gmn.message);
 		//signal read result ready
-		if(pthread_cond_signal(&arg->cond_result), != 0)
+		arg->status = 1;
+		if(pthread_cond_signal(&arg->cond_result) != 0)
 			die("signal fail");
+	
 		
 		//unlock mutex
 		if(pthread_mutex_unlock(&arg->mutex) != 0)
 			die("mutex unlock fail");
 	}
-
-
     return NULL;
 }
 
@@ -219,22 +222,50 @@ void * thread_p(void *arg_in)
 
     // TODO
     //      get max from thread_c
-	//lock the mutex	
+	//lock the mutex
+	if(pthread_mutex_lock(&arg->mutex) != 0)
+		die("lock fail");
+	while(1 != arg->status){	
+		if(pthread_cond_wait(&arg->cond_result, &arg->mutex))
+			die("wait fail");
+	}
+	arg->status = 0; //reset status
+	max = arg->max; //got max
+	if(pthread_mutex_unlock(&arg->mutex) != 0)
+		die("lock fail");
+	
     do { 
-		if(pthread_mutex_lock(&arg->mutex) != 0)
-			die("lock fail");
-		int done = 0;
-		//cond wait
-		while(1 != done){
-			if(pthread_cond_wait(&arg->cond_result, &arg->mutex) != 0)
-				die("cond_wait fail");
-		}
         guess = (min + max)/2;
         printf("My guess: %d\n", guess);
 
         // TODO
         //     send guess to thread_c
         //     wait for the result from thread_c (copy arg->result to result!)
+		//lock mutex
+		//send guess
+		if(pthread_mutex_lock(&arg->mutex) != 0)
+			die("lock fail");
+		arg->guess = guess; //update guess
+		//signal ready
+		arg->status = 1;
+		if(pthread_cond_signal(&arg->cond_guess) != 0)
+			die("signal fail");	
+		//release mutex
+		if(pthread_mutex_unlock(&arg->mutex) != 0)
+			die("unlock fail");
+
+		//get result
+		if(pthread_mutex_lock(&arg->mutex) != 0)
+			die("lock fail");
+		while(arg->status != 1){
+			if(pthread_cond_wait(&arg->cond_result, &arg->mutex) != 0)
+				die("wait fail");
+		}
+		arg->status = 0;
+		result = arg->result;
+		//unlock mutex
+		if(pthread_mutex_unlock(&arg->mutex) != 0)
+			die("wait fail");
 
         if (result > 0)
             min = guess + 1;
@@ -243,7 +274,17 @@ void * thread_p(void *arg_in)
     } while (result != 0);
 
     // arg->message is not changed after it is set
+	//if win wait for final message
+	if(pthread_mutex_lock(&arg->mutex) != 0)
+		die("lock fail");
+	while(arg->status != 1){
+		if(pthread_cond_wait(&arg->cond_result, &arg->mutex) != 0)
+			die("wait fail");
+	}
     printf("%s", arg->message);
+	arg->status = 0;
+	if(pthread_mutex_unlock(&arg->mutex) != 0)
+		die("unlock fail");
 
     return NULL;
 }
@@ -283,16 +324,15 @@ int main(int argc, char *argv[])
 	pthread_t threadc;
 	
 	//create uhh the uhh datastructure	
-	thread_arg_t shared_info;
-	shared_info.seed = seed;
-    shared_info.status = 0; //means not ready to guess
+	arg.seed = seed;
+    arg.status = 0; //means not ready to guess
 	
 
 	//create the thread things
-	int rc = pthread_create(&threadc, NULL, thread_c, &shared_info);
+	int rc = pthread_create(&threadc, NULL, thread_c, &arg);
 	if(rc != 0)
 		die("Thread Creation Fail");
-	rc = pthread_create(&threadp, NULL, thread_p, &shared_info);
+	rc = pthread_create(&threadp, NULL, thread_p, &arg);
 	if(rc != 0)
 		die("Thread Dereation Fail");
 	
